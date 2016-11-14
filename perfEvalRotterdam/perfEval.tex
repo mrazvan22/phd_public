@@ -7,9 +7,14 @@
 \usepackage{ucltemplate}
 \usepackage{color}
 
-\definecolor{parCol}{rgb}{0.1, 0.1, 1}
-\definecolor{stCol}{rgb}{0.1, 0.6, 0.1}
-\definecolor{bothCol}{rgb}{0, 0.5, 0.5}
+% \definecolor{parCol}{rgb}{0.1, 0.1, 1}
+% \definecolor{stCol}{rgb}{0.1, 0.6, 0.1}
+% \definecolor{bothCol}{rgb}{0, 0.5, 0.5}
+
+\definecolor{parCol}{rgb}{0, 0, 0}
+\definecolor{stCol}{rgb}{0, 0, 0}
+\definecolor{bothCol}{rgb}{0, 0, 0}
+
 
  
 %Information to be included in the title page:
@@ -50,7 +55,7 @@ The datasets analysed fall into three broad categories:
  \item well-phenotyped datasets: diagnoses are confirmed, stages and the disease process are known
  \begin{itemize}
       \item post-mortem confirmed dementia
-      \item familial AD 
+      \item familial AD (e.g. DIAN)
       \item prion disease 
  \end{itemize} 
  \item less well-phenotyped datasets: little information on diagnoses, stages or the disease process
@@ -80,7 +85,7 @@ Simulated datasets:
 \begin{itemize}
  \item same model used for generating and fitting data:
     \begin{itemize}
-    \item \textcolor{parCol}{direct comparison of fitted parameters}
+    \item \textcolor{parCol}{direct comparison of fitted parameters with true parameters}
     \end{itemize}
  \item different model:
     \begin{itemize}
@@ -93,12 +98,12 @@ Simulated datasets:
 
 Well-phenotyped datasets:
 \begin{itemize}
-  \item post-mortem confirmed dementia data sets: 
+  \item post-mortem confirmed dementia datasets: 
   \begin{itemize}
     \item \textcolor{bothCol}{differential diagnosis}
   \end{itemize}
     
-  \item autosomal dominant dementias (AD, HD): 
+  \item autosomal dominant dementia datasets: 
   \begin{itemize}
     \item \textcolor{bothCol}{prognostic accuracy of later time points from early data}
     \item \textcolor{bothCol}{prediction of genetic groups - supervised or unsupervised}
@@ -135,6 +140,48 @@ Less well-phenotyped datasets:
  \end{itemize}
   
 \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Summary}
+
+\begin{columns}[t, totalwidth=1.\textwidth]
+
+  \begin{column}{0.47\linewidth}
+      \begin{block}{Simulated datasets}
+	  \begin{itemize}
+	      \item \textcolor{parCol}{direct comparison between fitted and true parameters}
+	  \end{itemize}
+      \end{block}
+      
+      
+      \begin{block}{Well-phenotyped datasets}
+	  \begin{itemize}
+	      \item \textcolor{bothCol}{differential diagnosis}
+	      \item \textcolor{bothCol}{prognosis of later time points from early data}
+	      \item \textcolor{bothCol}{prediction of genetic groups}
+	  \end{itemize}
+      \end{block}
+      
+  \end{column}
+
+  \begin{column}{0.47\linewidth}
+      \begin{block}{Less well-phenotyped datasets:}
+	  \begin{itemize}
+	      \item \textcolor{parCol}{Goodness of fit: AIC, BIC}
+	      \item \textcolor{stCol}{Staging consistency}
+	      \item \textcolor{stCol}{Elapsed time prediction}
+	      \item \textcolor{stCol}{Correlation of stages with clinical or leave-out biomarkers}
+	      \item \textcolor{bothCol}{Resampling methods}
+	      \item \textcolor{bothCol}{Reproducibility for different}
+	  \end{itemize}
+      \end{block}
+  \end{column}
+
+\end{columns}
+
+
 
 \end{frame}
 
