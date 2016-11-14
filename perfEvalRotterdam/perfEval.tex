@@ -1,0 +1,166 @@
+\documentclass[10pt,xcolor=table]{beamer}
+ 
+% \usepackage[utf8]{inputenc}
+% \usepackage[T1]{fontenc}
+\usepackage[table]{xcolor}    % loads also »colortbl« 
+%  \usepackage{enumitem}
+\usepackage{ucltemplate}
+\usepackage{color}
+
+\definecolor{parCol}{rgb}{0.1, 0.1, 1}
+\definecolor{stCol}{rgb}{0.1, 0.6, 0.1}
+\definecolor{bothCol}{rgb}{0, 0.5, 0.5}
+
+ 
+%Information to be included in the title page:
+\title{Performance evaluation of disease progression models}
+\author{Razvan Valentin Marinescu}
+\institute{Center for Medical Image Computing, University College London}
+\date{15 November 2016}
+
+% logo of my university
+\titlegraphic{\includegraphics[height=1.0cm]{epsrc_logo.jpg}\hspace*{1.75cm}~%
+   \includegraphics[height=1.5cm]{NEWpond2017b.png} \hspace*{1.75cm}~ 
+   \includegraphics[height=1.0cm]{CDTlogo.png} 
+}
+ 
+ 
+\setbeamersize{text margin left=15pt,text margin right=15pt,text margin bottom=15pt}
+
+
+\begin{document}
+ 
+\frame{\titlepage}
+ 
+\setbeamerfont{frametitle}{size=\large}
+
+
+\begin{frame}
+\frametitle{Performance evaluation - Aims}
+
+Measure accuracy of: 
+\begin{itemize}
+  \item \textcolor{parCol}{the fitted model parameters that describe the disease process}
+  \item \textcolor{stCol}{predicted stages of subjects}
+\end{itemize}
+
+The datasets analysed fall into three broad categories:
+\begin{itemize}
+ \item simulated datasets: ground truth is user-defined
+ \item well-phenotyped datasets: diagnoses are confirmed, stages and the disease process are known
+ \begin{itemize}
+      \item post-mortem confirmed dementia
+      \item familial AD 
+      \item prion disease 
+ \end{itemize} 
+ \item less well-phenotyped datasets: little information on diagnoses, stages or the disease process
+ \begin{itemize}
+      \item Rotterdam study
+      \item ADNI
+ \end{itemize} 
+ 
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Performance evaluation - measures}
+
+% \setbeamertemplate{itemize items}[square]
+
+% CATEGORIES 
+% goodness of fit measures - AIC/BIC, chi-squared
+% self-consistency measures - staging consistency
+% staging accuracy measures -
+% Elapsed time prediction - 
+% reproducibility measures - 
+% prediction of genetic groups - 
+% 
+Simulated datasets:
+\begin{itemize}
+ \item same model used for generating and fitting data:
+    \begin{itemize}
+    \item \textcolor{parCol}{direct comparison of fitted parameters}
+    \end{itemize}
+ \item different model:
+    \begin{itemize}
+    \item need to transform the true parameters then compare
+    \end{itemize}
+
+\end{itemize}
+\vspace{0.5cm}
+
+
+Well-phenotyped datasets:
+\begin{itemize}
+  \item post-mortem confirmed dementia data sets: 
+  \begin{itemize}
+    \item \textcolor{bothCol}{differential diagnosis}
+  \end{itemize}
+    
+  \item autosomal dominant dementias (AD, HD): 
+  \begin{itemize}
+    \item \textcolor{bothCol}{prognostic accuracy of later time points from early data}
+    \item \textcolor{bothCol}{prediction of genetic groups - supervised or unsupervised}
+  \end{itemize}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Performance evaluation - measures}
+
+Less well-phenotyped datasets:
+\begin{itemize}
+ \item \textcolor{parCol}{Goodness of fit measures: AIC, BIC}
+ \item \textcolor{stCol}{Staging consistency: follow-up stages $>$ baseline stages}
+ \item \textcolor{stCol}{Elapsed time prediction: predict the elapsed time between two visits}
+ \item \textcolor{stCol}{Correlation of stages with clinical or leave-out biomarkers:}
+   \begin{itemize}
+   \item MMSE
+   \item CDR-SOB
+   \item hippocampal volume
+  \end{itemize}
+ \item \textcolor{bothCol}{Resampling methods:}
+  \begin{itemize}
+   \item cross-validation
+   \item bootstrapping
+  \end{itemize}
+ \item \textcolor{bothCol}{Reproducibility for different}: 
+ \begin{itemize}
+   \item models
+   \item datasets
+   \item fitting procedures
+   \item missing data entries
+ \end{itemize}
+  
+\end{itemize}
+
+\end{frame}
+
+\fontsize{6pt}{7.2}\selectfont
+\rowcolors{2}{gray!25}{white}
+
+% \begin{frame}
+% \frametitle{Validation methods for disease progression models}
+% 
+% \begin{tabular}{p{3.3cm} p{3.3cm} p{3.3cm}}
+%  Method & Pros & Cons\\
+%  \hline
+%  AIC/BIC & no extra data required & \\
+%  Staging consistency & &\\
+%  Elapsed time prediction & &\\ 
+%  Diagnosis prediction and differential diagnosis & & diagnosis not precise, required post-mortem confirmed data\\
+%  Correlation of stages with clinical markers & & relationship not linear\\
+%  Simulations & ground truth available & simulated data might not reflect actual data\\
+%  Prediction of leave-out biomarkers & & \\
+%  Resampling methods & can also be used to test accuracy of model parameters & computationally intensive\\
+%  Reproducibility across models and datasets & & requires different datasets\\
+% \end{tabular}
+% 
+% \end{frame}
+
+
+ 
+\end{document}
+
