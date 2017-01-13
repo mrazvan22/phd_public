@@ -6,7 +6,7 @@
 %  \usepackage{enumitem}
 \usepackage{ucltemplate}
 \usepackage{color}
-\usepackage{amsmath,amssymb,calc,ifthen,capt-of}
+\usepackage{amsmath,amssymb,calc,ifthen,capt-of,adjustbox}
 
 % \definecolor{parCol}{rgb}{0.1, 0.1, 1}
 % \definecolor{stCol}{rgb}{0.1, 0.6, 0.1}
@@ -53,8 +53,8 @@ Aims:
 \end{itemize}
 
 \begin{figure}
-\includegraphics[scale=0.25]{jack_curves.png}
-\includegraphics[scale=1]{drug_progression.jpg}
+\includegraphics[scale=0.22]{jack_curves.png}
+\includegraphics[scale=1.2]{drug_progression.jpg}
 \end{figure}
 
 \end{frame}
@@ -62,20 +62,33 @@ Aims:
 \begin{frame}
 \frametitle{Timeline of disease progression models}
 
-\newcommand{\colWidth}{2.5}
+\newcommand{\colWidth}{2.7}
 
 \begin{table}
 \scriptsize
 
-\begin{tabular}{p{3.5 cm} | p{2 cm} | p{\colWidth cm} | p{\colWidth cm}}
+\definecolor{orange0}{rgb}{1, 0, 0}
+\definecolor{orange1}{rgb}{0.66, 0.33, 0}
+\definecolor{orange2}{rgb}{0.33, 0.66, 0}
+\definecolor{orange3}{rgb}{0, 0.7, 0}
+
+\centering
+
+\begin{tabular}{p{2.5 cm} | c | p{2 cm} | p{\colWidth cm}}
+
  Model & Trajectory shape & Subject staging & Main limitation \\
  \hline
- Comparison of symptomatic stages & not modelled at all & very coarse & biased categories\\
- Event-based Model & step-functions & discreete stages & no notion of time\\
- Differential Equation Models & non-parametric & both onset and speed & trajectories not aligned\\
- Disease Progression Score & sigmoids & both onset and speed & sigmoidal assumption\\
- Self-modelling regression & non-parametric & both onset and speed & -\\
- Manifold Model & sigmoids & both onset and speed & sigmoids have the same shape\\
+ Comparison of symptomatic stages: mild, moderate, severe & \textcolor{orange0}{not modelled} & \textcolor{orange0}{only to categories} & biased categories\\
+  \hline
+ Event-based Model & \textcolor{orange1}{step-functions} & \textcolor{orange1}{discreete stages} & no notion of time\\
+  \hline
+ Differential Equation Model & \textcolor{orange3}{non-parametric} & \textcolor{orange3}{disease onset and speed} & trajectories not aligned\\
+  \hline
+ Disease Progression Score & \textcolor{orange2}{sigmoids} & \textcolor{orange3}{disease onset and speed} & sigmoidal assumption\\
+  \hline
+ Self-modelling regression & \textcolor{orange3}{non-parametric} & \textcolor{orange3}{disease onset and speed} & assumes all subjects follow same progression\\
+  \hline
+ \textbf{Manifold Model} & \textcolor{orange2}{sigmoids} & \textcolor{orange3}{disease onset and speed} & ...\\
 \end{tabular}
 \end{table}
 
@@ -91,15 +104,19 @@ Aims:
 \end{frame}
 
 \begin{frame}
-\frametitle{What is a manifold}
+\frametitle{What is a manifold?}
 
+% \vpsace{5cm}
 \begin{itemize}
  \item An N-dimensional space that generalises the Euclidean space
  \item Equipped with an inner product and distance metric
-  
 \end{itemize}
 
-%TODO picture with image manifolds
+\vspace{-0.5cm}
+\begin{figure}
+\includegraphics[scale=0.28]{manifold_faces_diagram.png}
+\end{figure}
+\vspace{-0.5cm}
 
 \end{frame}
 
@@ -119,7 +136,7 @@ Aims:
   \begin{itemize}
   \item time shift $t_0$
   \item progression speed $v_0$
-  \item observation point on the manifold $t_0$
+  \item observation point on the manifold $p_0$
   \end{itemize}
   \item The biomarker trajectory $\gamma_{p_0,t_0,v_0}$
 %   \item The measurement for subject $i$ at visit $j$ is $y_{i,j}$ 
@@ -135,8 +152,8 @@ where
 \begin{equation}
 \label{eq:manifold2}
 \begin{cases}
-  \alpha_i = exp(\nu_i)\\
-  \nu_i \sim \bigotimes_{i=1}^p N(0, \sigma_{\nu}^2)\\  
+  \alpha_i = exp(\eta_i)\\
+  \eta_i \sim \bigotimes_{i=1}^p N(0, \sigma_{\eta}^2)\\  
   \tau_i \sim \bigotimes_{i=1}^p N(0, \sigma_{\tau}^2)\\  
   \epsilon_{i,j} \sim \bigotimes_{i,j} N(0, \sigma^2)\\  
 \end{cases}
@@ -144,14 +161,19 @@ where
 
 \end{frame}
 
-% \begin{frame}
-% \frametitle{Some intuition}
-% 
-% \begin{figure}
-% \includegraphics[scale=0.25]{manifold_schiratti_nips.png}
-% \end{figure}
-% 
-% \end{frame}
+\begin{frame}
+\frametitle{Data}
+
+ADNI:
+\begin{itemize}
+ \item ADAS-COG from 1391 subjects - ADNI1, ADNIGO and ADNI2
+ \item cortical thickness in 34 ROIs from 725 subjects - ADNI1 
+ \item follow-up: 18 months to 4 years
+ 
+\end{itemize}
+
+
+\end{frame}
 
 \begin{frame}
 \frametitle{Results - time shifts}
@@ -180,6 +202,52 @@ where
 
 \end{frame}
 
+\begin{frame}
+\frametitle{Model extension - NIPS paper}
+
+\begin{figure}
+\includegraphics[scale=0.5]{nips_cover.png}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Model extension - NIPS paper}
+
+\begin{itemize}
+ \item Multivariate
+ \item Each subject has its own unique trajectories
+ \item Fitting is performed with Stochastic Approximation EM instead of Nelder-Mead
+\end{itemize}
+
+
+\begin{figure}
+\includegraphics[scale=0.25]{manifold_schiratti_nips.png}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Summary}
+
+Model strenghts:
+\begin{itemize}
+ \item The Riemannian manifold framework enables many types of trajectory models
+ \item For every subject it estimates:
+ \begin{itemize}
+  \item unique biomarker trajectories (in NIPS extension)
+  \item disease onset
+  \item progression speed
+ \end{itemize}
+\end{itemize}
+
+Limitations:
+\begin{itemize}
+ \item assumes a parametric shape of the biomarker trajectories
+\end{itemize}
+
+
+\end{frame}
 
 \fontsize{6pt}{7.2}\selectfont
 \rowcolors{2}{gray!25}{white}
