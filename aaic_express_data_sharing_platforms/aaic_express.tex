@@ -15,8 +15,8 @@
 \definecolor{stCol}{rgb}{0, 0, 0}
 \definecolor{bothCol}{rgb}{0, 0, 0}
 
+\usepackage{graphicx,subcaption}
 
- 
 %Information to be included in the title page:
 \title{AAIC Express: Data Sharing Platforms \\(Featured Research Session)}
 \author{Razvan Valentin Marinescu}
@@ -25,9 +25,7 @@
 
 % logo of my university
 
- 
 \setbeamersize{text margin left=15pt,text margin right=15pt,text margin bottom=15pt}
-
 
 \begin{document}
  
@@ -35,36 +33,59 @@
  
 \setbeamerfont{frametitle}{size=\large}
 
-
 % Worldwide many clinical studies are ongoing on the pathophysiology, diagnosis, prognosis and treatment of Alzheimer’s disease. The potential of these studies is not fully used as they not yet linked to each other. Several data-sharing initiatives have started in recent years. Aim of this Featured Research Symposium is to inform about these initiatives and to stimulate their use for data analysis and selection of subjects for future studies. The symposium will have presentations on 4 initiatives: 1) Dementia Platform United Kingdom (DPUK). This is an integrated dementias research environment that enables rapid analysis of multiple independent data sets.  2) The European Prevention of Alzheimer’s Dementia (EPAD) Registry. The registry aims to provides access to ongoing studies and enables selection of subjects for other studies including trials. 3) The Global Alzheimer's Association Interactive Network (GAAIN). This is a gateway providing access to a vast collection of Alzheimer's disease research data, sophisticated analytical tools, and computational resources. 4) The European Medical Information Framework for Alzheimer’s disease (EMIF-AD). This is a Europe based initiative, which provides a catalogue of on-going studies, pipelines for data harmonisation into a common ontology, and central data-storage.
 
-
+%DPUK has also invested in scanning equipment(7 PET-MR scanners), 
 \begin{frame}
-\frametitle{Dementias Platform UK}
+\frametitle{Dementias Platform UK (DPUK)}
 
 \begin{itemize}
-\item Integrated Dementias research environment
-\item enables rapid analysis of multiple independent datasets (2 million subjects)
-\item a variaty of data types: EHRs, genetic, imaging and wearables data
+\item Integrated dementias research environment
+\item Enables rapid analysis of 38 UK-based existing studies (2 million subjects)
+\item Risk stratification for early phase trials
+\item Available data: EHRs, genetic, imaging and wearables data
+\item Infrastructure
+\begin{itemize}
+ \item 7 PET-MR scanners
+ \item Multi-modal informaics network
+ \item Stem-cell network
+\end{itemize}
+\item Data must be analysed remotely
 
 \end{itemize}
 
 
-DPUK enables risk stratification for the conduct of early phase trials, in-silico experiments, and technology development for molecular and structural imaging, induced pluripotent stem cells (iPSCs) and bio-informatics. Me
+\vspace{-1em}
+\begin{figure}
+\centering
+\includegraphics[height=2.5cm,right]{DPUK_logo}   
+\end{figure}
+\vspace{-4em}
 
 \end{frame}
 
 \begin{frame}
 \frametitle{European Prevention of Alzheimer’s Dementia (EPAD)}
 
+\includegraphics[height=1.5cm,right]{EPADlogo}  
+\vspace{1em}
 \begin{itemize}
  \item Recruiting participants for AD trials is difficult
  \item EPAD allows recruitment of suitable patients from other clinical trials
  \item 9 cohorts currently signed up, 17,000 non-demented participants
- \item cohort owners provide anonymised data on AD risk factors and demographics
+ \item Cohort owners provide anonymised data on AD risk factors and demographics
+ \item Adaptive Clinical trials: 
 \end{itemize}
 
-
+\begin{figure}
+% \begin{subfigure}{0.4\textwidth}
+% \end{subfigure}\\
+\begin{subfigure}{1\textwidth}
+\centering
+\includegraphics[height=2cm,right]{epad_flow}  
+\end{subfigure}
+\end{figure}
+\vspace{-1em}
 \end{frame}
 
 \begin{frame}
@@ -73,22 +94,29 @@ DPUK enables risk stratification for the conduct of early phase trials, in-silic
 \begin{itemize}
  \item Platform for cohort discovery and data exploration
  \item Integrates data from over 60 Data Partners (DP)
- \item Also offers 
+ \begin{itemize}
+  \item ADNI, DIAN, AIBL, Brain Health Registry, CLSA,  E-ADNI, EDSD, \dots
+ \end{itemize}
+ \item Provides data visualisation and analysis tools in the browser
 \end{itemize}
 
+\begin{figure}
+\centering
+\includegraphics[height=4.5cm,right]{interrogator.png}   
+\end{figure}
 
 \end{frame}
 
-\begin{frame}
-\frametitle{European Medical Information Framework for Alzheimer’s disease (EMIF-AD)}
-
-\begin{itemize}
- \item 
-\end{itemize}
-
-
-
-\end{frame}
+% \begin{frame}
+% \frametitle{European Medical Information Framework for Alzheimer’s disease (EMIF-AD})
+% 
+% \begin{itemize}
+%  \item 
+% \end{itemize}
+% 
+% 
+% 
+% \end{frame}
 
 \fontsize{6pt}{7.2}\selectfont
 \rowcolors{2}{gray!25}{white}
