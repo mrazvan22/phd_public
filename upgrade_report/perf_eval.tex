@@ -1,0 +1,377 @@
+\chapter{Performance Evaluation}
+\label{chapter:perf}
+
+\section{Introduction}
+
+% validation of DPMs
+% DPMs have limitations/overfitting -> need to test them -> but no ground truth -> aim is to eval. perf. w/o ground truth -> perf. metrics -> test them on EBM and DEM -> impact
+Data-driven disease progression models such as the Event-Based Model (section \ref{sec:ebm}), the Differential Equation Model (section \ref{sec:dem}) or the Disease Progression Score (DPS) (section \ref{sec:dps}) make several assumptions about the biomarker data and have inherent limitations, so it is therefore important to evaluate their performance. However, this is complicated by the fact that for most datasets analysed we don't know the ground truth on the shape and alignment of the biomarker trajectories or on the stages of subjects. Such ground truth information would only be available in synthetic datasets, where it is straightforward to validate the models as shown in the work of \cite{young2015simulation}. The ability to evaluate disease progression models will help find models and types of fitting algorithms that work best on different biomarker datasets, offer a correct picture of how the disease evolves and can accurately stage patients, which is vital in clinical trials. We are not aware of any previous work that has been done on performance evaluation of data-driven disease progression models. We searched on Google Scholar for the following keywords: "disease", "progression", "model", "performance", "evaluation" but we did not find anything relevant. 
+
+In this chapter we suggest ways to evaluate the performance of disease progression models on real datasets such as ADNI or DRC where we don't have accurate ground truth information about biomarker trajectories or subject stages. We seek to evaluate two classes of models: the event-based model and the differential equation model. For each of these models, we devise improvements in the fitting procedures and compare them against the standard fitting methods. In section \ref{sec:ebmImprovements} we present improvements in the Event-Based Model while in section \ref{sec:demImprovements} we present improvements in the Differential Equation Model. Afterwards, in section \ref{sec:perfEvalMethds} we propose some performance metrics that can be used to evaluate the performance of these disease progression models. 
+
+\section{EBM improvements}
+\label{sec:ebmImprovements}
+
+In this section we outline two improvements in the fitting of the event-based model: a simultaneous blocked MCMC sampling of the distribution parameters and event ordering (section \ref{sec:simultSampling}), an Expectation-Maximisation approach (section \ref{sec:ebmEM}). Furthermore, we also present an improvement in temporal alignment of the DEM trajectories in section \ref{sec:demOptim}). 
+
+\subsection{EBM - Simultaneous Sampling}
+\label{sec:simultSampling}
+
+In this section we present an improvement in the fitting of the event-based model that uses simultaneous MCMC sampling of the distribution parameters and event sequence. So far in the work of \cite{fonteijn2012event} or \cite{young2014data}, the event based model has been fit by first estimating the parameters of the $p(x|E)$ and $p(x|\neg E)$ distributions, and then estimating the maximum likelihood sequence. This was under the assumption at the sequence and the parameters of the normal and abnormal distributions are independent. However, this is not the case because choosing different distributions (which define the "soft" abnormality threshold) for a single biomarker might change it's position in the sequence and potentially the position of other biomarkers too. We therefore propose a new \emph{Simultaneous Sampling} method that optimises both the distribution parameters and the ordering at the same time by sampling them using a blocked Markov Chain Monte Carlo (MCMC) method. 
+
+Let us define a set of events $E_1, E_2, \dots , E_N$ and an ordering $S = [S(1), \dots, S(N)]$ which is a permutation of the integers $1,\dots, N$ creating the event ordering $E_{S(1)}, E_{S(2)},\dots, E_{S(N)}$. The likelihood of dataset $X$ given the ordering $S$ is given by:
+
+\begin{equation}
+\label{ap:ebmMain}
+ p(X|S) = \prod_{i=1}^P \left[ \sum_{k=0}^N p(k) \left( \prod_{j=1}^k p\left(x_{i,S(j)} | E_{S(j)} \right) \prod_{j=k+1}^N p\left(x_{i,S(j)} | \neg E_{S(j)}\right) \right) \right]
+\end{equation}
+where $x_{ij}$ represents the value from subject $i$ for biomarker $j$ and is informative of event $E_j$ in subject $i$, $P$ is the number of subjects and $N$ is the number of biomarkers. Let us further assume the biomarker distributions are normally distributed, i.e. $p(x|E_j) \sim N(\mu^a_j, \sigma^a_j)$ and $p(x|\neg E_j) \sim N(\mu^n_j, \sigma^n_j)$ where $\mu^a_j$ and $\sigma^a_j$ model the distribution of abnormal values for biomarker $j$ (i.e. event $E_j$ occurred), while $\mu^n_j$ and $\sigma^n_j$ model the distribution of normal values for biomarker $j$ (event $E_j$ did not occur). Thus, the full set of parameters that need to be modelled is $\theta = \left[ [\mu^n_j, \sigma^n_j, \mu^a_j, \sigma^a_j]^{j=1 \dots N}, S \right]$. Therefore, the likelihood in equation \ref{ap:ebmMain} can be explicitly written as:
+
+\begin{equation}
+\label{ap:ebmExplicit}
+ p(X|S, [\mu^n_j, \sigma^n_j, \mu^a_j, \sigma^a_j]^{j=1 \dots N}) = \prod_{i=1}^P \left[ \sum_{k=0}^N p(k) \left( \prod_{j=1}^k p\left(x_{i,S(i)} | \mu^a_{S(j)}, \sigma^a_{S(j)} \right) \prod_{j=k+1}^N p\left(x_{i,S(j)} | \mu^n_{S(j)}, \sigma^n_{S(j)} \right) \right) \right]
+\end{equation}
+
+In order to maximise this likelihood, one can perform MCMC or Gibbs sampling and get the sample $\theta$ with the highest likelihood. However, this can take a very long time to converge due to the large dimensionality and the dependence between parameters. We therefore propose a blocked MCMC sampling approach, where at each step we only propose parameters for biomarker $j$, i.e. $[\mu^n_j, \sigma^n_j, \mu^a_j, \sigma^a_j]$ along with a new sequence $S_j^{new}$ where only event $E_j$ changed its position. The distribution parameters for the other biomarkers and the ordering of the other events $i \neq j$ are kept the same. The proposed sample $\theta^{new}$ is then accepted or rejected according to the normal Metropolis rule. At next iteration, we sample parameters for the next biomarker and so on until convergence. This blocked approach works well because there is strong dependence between parameters corresponding to the same biomarker and between the position of the corresponding event in the sequence. 
+
+The covariance matrix of the proposal distribution is estimated by taking 100 bootstraps of the dataset and computing the covariance of $[\mu^c, \sigma^c, \mu^p, \sigma^p]$, where $\mu^c$, $\sigma^c$ are the mean and standard deviation of the control group while $\mu^p$, $\sigma^p$ are the mean and standard deviation of the patient group. While we have used Gaussian distributions for $p(x|E)$ and $p(x|\neg E)$, one can actually use any other mixture of parametric distributions.
+
+%TODO: add algorithm with step-by-step instructions
+
+\subsection{EBM - Expectation Maximisation}
+\label{sec:ebmEM}
+
+\newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
+\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+
+In this section we present how the event-based model can be fit using Expectation Maximisation (EM). EM works well in this scenario because each stage of the subjects is a latent variable that can be estimated in the E-step, while the distribution parameters and the optimal sequence can be estimated in the M-step. The motivation for using EM is the same as for the simultaneous sampling approach: we can fit the data better by not assuming that the distribution parameters and the event sequence are independent.
+
+Let us assume that $p(x|E)$ and $p(x|\neg E)$ follow normal distributions, where $p(x|E_k) \sim N(\mu^a_k, \sigma^a_k)$ and $p(x|\neg E_k) \sim N(\mu^n_k, \sigma^n_k)$. Our vector of parameters is then $\theta = [[\mu_k^n, \sigma_k^n, \mu_k^a, \sigma_k^a]^{k=1..N}, S ]$ where $S$ is the event ordering. Moreover, we define $Z = [Z_1, Z_2, \dots, Z_P]$ a vector of (latent) discrete random variables representing the stage of each subject which can take values $0 \dots N$, where $N$ is the number of biomarkers. The dataset is denoted by $X$ where $x_{ij}$ represents the data from subject $i$ for biomarker $j$ while $X_i = [x_{i1}, \dots, x_{iN}]$ is a vector of biomarker data for subject $i$. 
+
+\subsubsection{E-step}
+
+In the E-step of the EM framework we aim to compute the following quantity:
+$$Q(\theta | \theta^{old}) = \mathbb{E}_{Z|X,\theta^{old}}[log p(X,Z|\theta)] = $$
+Assuming a uniform prior on $Z$, i.e. $\log p(Z = z) = C$ and expanding $Z$ we get: 
+$$ Q(\theta | \theta^{old}) = C + \sum_{z_1 = 0}^N \dots \sum_{z_P = 0}^N p(Z = z|X, \theta^{old}) log\ p(X|Z_1 = z_1, \dots, Z_P = z_P, \theta)$$
+Further assuming that the data from each subject is conditionally independent, .i.e $X_i \independent X_j|\theta$ and $X_i \independent Z_j|\theta$ for $i \neq j$ we get:
+$$ Q(\theta | \theta^{old}) = C + \sum_{z_1, \dots, z_P}  p(Z = z_1, \dots, z_P |X, \theta^{old})\ log\left[ \prod_{i=1}^{P} p(X_i|Z_i = z_i, \theta) \right]$$
+where $P$ is the number of patients. After further expansion of $p(X_i|Z_i = z_i, \theta)$, moving the log inside the products and removing the constant $C$ we get:
+$$ \sum_{z_1, \dots, z_P}  p(Z = z_1, \dots, z_P |X, \theta^{old})\ \sum_{i=1}^{P} \left[ \sum_{j=1}^{z_i} log\ p(x_{ij}|E_{S(j)}) + \sum_{j=z_i + 1}^N log\ p(x_{ij}| \neg E_{S(j)}) \right]$$
+Replacing $p(x|E)$ and $p(x|\neg E)$ with the pdf of a Gaussian distribution we get:
+\begin{equation} 
+\label{eq:eStep}
+\sum_{z_1, \dots, z_P}  p(Z = z_1, \dots, z_P |X, \theta^{old})\ \sum_{i=1}^{P} \left[ \sum_{j=1}^{z_i} log\ N(x_{ij}|\mu_{S(j)}^a, \sigma_{S(j)}^a) + \sum_{j=z_i + 1}^N log\ N(x_{ij}|\mu_{S(j)}^n, \sigma_{S(j)}^n) \right] \\
+\end{equation}
+
+\subsubsection{M-step}
+
+In the M-step we aim to find the arguments $\theta^*$ that maximise the expected log-likelihood of the complete data $\theta^* = \argmax_{\theta} Q(\theta | \theta^{old})$. As the function is differentiable with respect to all parameters apart from $S$ (which is discrete), we can find the maximum by solving $\nabla_{\theta}Q(\theta|\theta_{old}) = 0$. We next show the derivation for parameter $\mu_k^n$, which is the solution of  $\frac{d}{d\mu_k^n}Q(\theta | \theta^{old}) = 0 $. Using the result from equation \ref{eq:eStep} and moving the derivation operator inside the sums we get:
+\begin{align*}
+  \sum_{z_1, \dots, z_P}  p(Z = z_1, \dots, z_P |X, \theta^{old}) \sum_{i=1}^{P} \left[ \sum_{j=1}^{z_i}  \frac{d}{d\mu_k^n}log\ N(x_{ij}|\mu_{S(j)}^a, \sigma_{S(j)}^a) + \sum_{j=z_i + 1}^N \frac{d}{d\mu_k^n}log\ N(x_{ij}|\mu_{S(j)}^n, \sigma_{S(j)}^n) \right] = 0
+\end{align*}
+The derivative term cancels all likelihood terms apart from the one where $S(j) = k$:
+$$ \sum_{z_1 = 0}^N \dots \sum_{z_P = 0}^N p(Z_1 = z_1, \dots, Z_P = z_P|X, \theta^{old})\ \sum_{i=1}^{P} \left[ \sum_{j=z_i + 1}^N \mathbb{I}[S(j) = k] \frac{d}{d\mu_k^n}log\ N(x_{ij}|\mu_k^n, \sigma_k^n) \right] = 0$$
+which can be rewritten as:
+$$ \sum_{z_1 = 0}^N \dots \sum_{z_P = 0}^N p(Z_1 = z_1, \dots, Z_P = z_P|X, \theta^{old})\ \sum_{i=1}^{P} \left[ \frac{d}{d\mu_k^n}log\ N(x_{ik}|\mu_k^n, \sigma_k^n) \sum_{j=z_i + 1}^N \mathbb{I}[j = S^{-1}(k)] \right] = 0$$
+$$ \sum_{z_1 = 0}^N \dots \sum_{z_P = 0}^N p(Z_1 = z_1, \dots, Z_P = z_P|X, \theta^{old})\ \sum_{i=1}^{P} \left[ \frac{d}{d\mu_k^n}log\ N(x_{ik}|\mu_k^n, \sigma_k^n) \mathbb{I}[S^{-1}(k) > z_i] \right] = 0$$
+Further rearranging the sum terms we get:
+$$ \sum_{i=1}^{P} \frac{d}{d\mu_k^n}log\ N(x_{ik}|\mu_k^n, \sigma_k^n) \sum_{z_i = 0}^N \mathbb{I}[S^{-1}(k) > z_i] \sum_{z_j \ne z_i} p(Z_1 = z_1, \dots, Z_P = z_P|X, \theta^{old})\ = 0$$
+
+$$ \sum_{i=1}^{P} \frac{d}{d\mu_k^n}log\ N(x_{ik}|\mu_k^n, \sigma_k^n) \sum_{z_i = 0}^N \mathbb{I}[S^{-1}(k) > z_i]\ p(Z_i = z_i | X, \theta^{old})\ = 0$$
+
+$$ \sum_{i=1}^{P} \frac{d}{d\mu_k^n}log\ N(x_{ik}|\mu_k^n, \sigma_k^n) \ p(S^{-1}(k) > Z_i | X, \theta^{old})\ = 0$$
+Inserting the formula for the Gaussian pdf we get:
+$$ \sum_{i=1}^{P} \frac{d}{d\mu_k^n}\frac{(x_{ik} - \mu_k^n)^2}{2(\sigma_k^n)^2} \ p(S^{-1}(k) > Z_i | X, \theta^{old})\ = 0$$
+which results in the update rule for $\mu_k^n$, the mean of $p(x|\neg E_k)$
+$$ \mu_k^n = \sum_{i=1}^P x_{ik} w_i^n$$\\
+where
+$$w_i^n = \frac{p(S^{-1}(k) > Z_i | X, \theta^{old})}{\sum_{i=1}^P \ p(S^{-1}(k) > Z_i | X, \theta^{old})}$$
+Using a similar approach we get the update rules for $\sigma_k^n$, $\mu_k^a$, $\sigma_k^a$:
+$$ \sigma_k^n = \sqrt{\sum_{i=1}^P w_i^n (x_{ik} - \mu_k^n)^2}$$\\
+$$ \mu_k^a = \sum_{i=1}^P x_{ik} w_i^a$$\\
+$$ \sigma_k^a = \sqrt{\sum_{i=1}^P w_i^a (x_{ik} - \mu_k^a)^2}$$\\
+where
+$$w_i^a = \frac{p(S^{-1}(k) \leq Z_i | X, \theta^{old})}{\sum_{i=1}^P \ p(S^{-1}(k) \leq Z_i | X, \theta^{old})}$$
+
+Solving for $S$ in the M-step is unfortunately intractable, so we use MCMC sampling where at each step of the sampling process we propose a new sequence $S^{new}$, find the optimal distribution parameters for each biomarker given $S^{new}$ using the EM update rules and then evaluate the likelihood $Q(\theta | \theta^{old})$. The sequence and parameters that maximise the likelihood are chosen and the EM proceeds to a new iteration. Although this approach might not guarantee that we truly find the optimal parameters, it still results in an increase of $Q(\theta | \theta^{old})$. This approach, called generalised EM, guarantees that the method will still converge to a local maxima. We also use the mean and standard deviation of the control and patient populations as a starting point for EM. 
+
+\section{DEM improvements}
+\label{sec:demImprovements}
+
+\subsection{Trajectory alignment}
+\label{sec:demTrajAlignSimple}
+
+% alignment of the trajectories
+The DEM model presented in background section \ref{sec:dem} fits a model for each biomarker independently. However, the reconstructed trajectories are not aligned on the temporal axis. One simple way to align them is to set, for each biomarker, time $t=0$ correspond to the average biomarker value of one of the diagnostic groups. More precisely, for each biomarker we set $f_b(0) = x_b$ where $f_b$ is the trajectory of biomarker $b$ and $x_b$ is the average value of biomarker $b$ for one diagnostic group (e.g. AD, MCI). There are two limitations with this approach: (1) the disease onset can be much earlier than the baseline visit and (2) patients are at different stages in the disease at the baseline visit. An improved alignment method is presented in section \ref{sec:demOptim}.
+
+\subsection{Optimised trajectory alignment}
+\label{sec:demOptim}
+
+In this section we present a data-driven Bayesian model that takes trajectories obtained from the differential equation model (DEM) and aligns them on the same temporal axis. Let us denote by $X$ our dataset where $x_{pb}$ is the measurement of biomarker $b$ in patient $p$, $Z_p$ is the discrete stage of patient $p$ and $f_b$ is the shape of the trajectory for biomarker $b$. For every biomarker $b$, we aim to estimate a temporal shift $t_b$ of the trajectory and a measurement noise $\sigma_b$. The log likelihood for the data $X_p$ from patient $p$ who is at stage $z_p$ can be expressed as:
+
+$$p(X_p| f_1,\dots, f_B, t_1, \dots, t_B, \sigma_1, \dots , \sigma_B, z_p ) = \prod_{b=1}^{B}  N(x_{pb}|f_b(z_p-t_b), \sigma_b)$$
+Multiplying by the prior on $z_p$ and summing over all the possible values of $z_p$ we get the marginal:
+$$p(X_p| f_1,\dots, f_B, t_1, \dots, t_B, \sigma_1, \dots , \sigma_B) = \sum_{z_p} p(Z_p = z_p) \prod_{b=1}^{B}  N(x_{pb}|f_b(z_p-t_b), \sigma_b)$$
+Assuming the data from each subject is independent, we get the full likelihood:
+$$ p(X| f_1,\dots, f_B, t_1, \dots, t_B, \sigma_1, \dots , \sigma_B) = \prod_{p=1}^{P} \sum_{z_p} p(Z_p = z_p) \prod_{b=1}^{B}  N(x_{pb}|f_b(z_p-t_b), \sigma_b)$$
+
+This likelihood can be optimised with any method of choice such as MCMC sampling or gradient methods. In this work, we chose an iterative approach where, given an initial estimate of the trajectory shifts $t$ we find the optimal levels of measurement noise $\sigma$,  then optimise for the trajectory shifts and so on. For the datasets analysed, this approach converges after around 30-40 iterations.
+
+\subsection{Avoiding Singularities}
+\label{sec:demSingularity}
+
+% integration details - segment selection for integration
+Due to noise in the biomarker measurements, the mean of $f(s)$ can cross the $Y=0$ axis which results in the integrated trajectory having a horizontal asymptote and then changing its direction. In order to avoid this we limit the integration of the line only on the segment that is in the $Y<0$ half-space, where $Y$ is the rate of biomarker change. This is the same as constraining the biomarker trajectories to be monotonically decreasing, an assumption that is consistent with the nature of most neurodegenerative diseases. If there exist two or more segments in the $Y<0$ half-space, we choose the largest one that overlaps with the range of biomarker values of the patient data. 
+
+\section{Performance Evaluation Methods}
+\label{sec:perfEvalMethds}
+
+In this section we present a few ways that we used to evaluate the performance of disease progression models. In section \ref{sec:stagingConsist} we present metrics which test staging consistency, i.e. that follow-up stages are greater or equal to baseline stages. We then generalise this concept in section \ref{sec:timeLapse} to test the accuracy of models in predicting the time lapse between two visits of a subject. Finally, in section \ref{sec:diagBasedMetrics} we present metrics that test the performance on predicting clinical diagnosis or conversion status.
+
+\subsection{Staging consistency}
+\label{sec:stagingConsist}
+
+The staging consistency metrics test whether stages at a follow-up visit are greater than or equal to the stages at baseline. Let us consider a set of random variables $z_t^i$ representing the stage of subject $i$ at timepoint $t$, where $i \in [1 \dots N], t \in [1 \dots T_i]$, $N$ being the number of subjects and $T_i$ the number of time points for subject $i$. For most disease progression models we can find the posterior $p(z_t^i|X_i, \theta)$, which we will call the staging probabilities. Moreover, let $M^i_t = \argmax_s p(z_t^i = s)$ be the maximum likelihood stage for subject $i$ at time point $t$. This allows us to introduce the first performance metric, which we will call the \emph{hard staging consistency} $C_h$, as follows:
+
+\begin{equation}
+ C_h = \frac{1}{-N +\sum_{i=1}^N T_i} \sum_{i=1}^N \sum_{t=2}^{T_i} \mathbb{I}[M^i_t > M^i_{t-1}] 
+\end{equation}
+
+$C_h$ simply counts the proportion of stages from consecutive visits of every subject where the stage at the later visit must be greater than the stage at the earlier visit. The element $-N +\sum_{i=1}^N T_i$ is a normalising constant that represents the number of pairs of consecutive visits from all subjects and time points in the dataset. The $C_h$ metric ranges from 0 (no consistent pairs of stages) to 1 (all pairs of stages are consistent).
+
+% \subsubsection{Staging consistency}
+% soft staging consistency - pFUgrBL
+The main limitation of the \emph{hard staging consistency} is that it only uses the maximum likelihood stages. We are however interested in defining a soft version of this metric that would use all the values in the distribution of $z_t^i$. Therefore, we define the \emph{soft staging consistency} $C_s^i(t_1,t_2)$ for subject $i$ given two time points $t_1$ and $t_2$ as:
+
+\begin{equation}
+C_s^i(t_1,t_2) = p(z^i_{t_1} \leq z^i_{t_2}) = \sum_{s \in S} p(z^i_{t_2} = s) p(z^i_{t_1} \leq s) 
+\end{equation}
+where $S$ is the set of possible stages in the disease progression model. We then define the \emph{soft staging consistency} for the whole population as the mean of subject-specific consistencies for consecutive timepoints:
+
+\begin{equation}
+C_s = \frac{1}{-N +\sum_{i=1}^N T_i} \sum_{i=1}^N \sum_{t=2}^{T_i} C_s^i(t_1,t_2) 
+\end{equation}
+
+It should be noted that the soft staging consistency would yield the same result as the hard staging consistency if the staging probabilities were expressed as Dirac delta functions, with all the likelihood being assigned to the maximum likelihood stage. However, most of the time there is uncertainty in the staging, and this uncertainty is penalised automatically by this metric. $C_s$ also ranges from 0 (inconsistency between pairs of predicted stages) to 1 (consistency and usually very small uncertainty in predicted stages).
+%TODO: add picture with 2 distributions showing hashed region
+
+% time-difference consistency
+\subsection{Time-lapse prediction}
+\label{sec:timeLapse}
+
+Time-lapse prediction is a generalisation of the staging consistency, where the disease progression model needs to predict how much time passed between two visits of the same subject, which is the compared against the true time elapsed. As previously described, the soft and hard staging consistency metrics penalise if a follow-up stage is smaller than a baseline stage. However, we are also interested in a \emph{time-lapse} metric that tests how well a model predicts the interval of time that passed between a baseline and follow-up visit. We can define the \emph{hard time-lapse} metric $D_h$ as follows:
+
+\begin{equation}
+D_h = \frac{1}{-N +\sum_{i=1}^N T_i} \sum_{i=1}^N \sum_{t=2}^{T_i} \left| \tau(M^i_t) - \tau(M^i_{t-1}) - (a^i_t - a^i_{t-1}) \right|
+\end{equation}
+where $a^i_t$ is the age of subject $i$ at timepoint $t$, $M^i_t$ is the maximum likelihood stage for subject $i$ at timepoint $t$ and $\tau(M^i_t)$ is the estimated time from onset associated with stage $M^i_t$. The equivalent \emph{soft time-lapse} metric $D_s$ is defined as:
+\begin{equation}
+D_s = \frac{1}{-N +\sum_{i=1}^N T_i} \sum_{i=1}^N \sum_{t=2}^{T_i} \left| \mathbb{E}[\tau(z^i_t) - \tau(z^i_{t-1})] - (a^i_t - a^i_{t-1}) \right|
+\end{equation}
+
+This metric therefore requires the model to be able to estimate a time from onset for every stage. This is not directly available for the event-based model, as we don't explicitly model the function $\tau$. However, for the differential equation model $\tau$ is readily available. We have therefore only applied these consistency metrics to the differential equation model.
+
+\subsection{Diagnosis and conversion prediction}
+\label{sec:diagBasedMetrics}
+
+% direct diagnosis prediction - optimal threshold
+The accuracy of prediction of clinical diagnosis or conversion prediction can also be used to evaluate the performance of disease progression models. In order to avoid circularity, the model should not use cognitive tests that are used for setting the diagnosis. Diagnosis prediction can be done by finding the optimal threshold stage which separates two classes of subjects (e.g. Controls vs AD or MCI vs AD) using their predicted stages. For a new subject, one can then stage the subject and then assign a diagnosis depending on which side of the threshold it is. The threshold is usually chosen as the one that maximised a chosen metric such as balanced accuracy. The method above can also be used to predict conversion from one symptomatic group to another by finding the optimal staging threshold that separates converters from stable subjects. In order to avoid overfitting, N-fold cross-validation should be used, where the training data is used for model fitting and for finding the optimal threshold, while the testing data is used for measuring the predictive accuracy. 
+
+\subsection{Differential diagnosis}
+\label{sec:diff_diagnosis_ebm}
+% 
+% differential diagnosis
+Disease progression models such as the EBM or the DEM can also be evaluated on the accuracy in differential diagnosis, which requires building a different disease progression model for each disease. We propose to perform differential diagnosis in the following manner: for every disease we train a disease progression model $M_d$ on their corresponding dataset. Then, given the biomarker data $X_j$ of a new patient, we compute the likelihood of the data given the model as:
+\begin{equation}
+ p(X_j|M_d) = \sum_{s \in S} p(X_j|M_d, \theta, z_j = s)p(z_j = s)
+\end{equation}
+where $z^j$ is the stage of subject $j$ and $S$ is the set of all possible stages. We also set the prior on $z_j$ to be uniform. Finally, we assign a new disease $d_j$ to subject $j$ as $d_j = \argmax_d p(X_j|M_d)$.
+
+\section{Experiments}
+
+% fitting methods tested
+We evaluated two classes of disease progression models: the event-based model and the differential equation model. We tested three methods of fitting the EBM: (a) the \emph{standard} EBM fitting method described in background section \ref{sec:ebm}, (b) the \emph{simultaneous MCMC sampling} approach described in section \ref{sec:simultSampling} and (c) the \emph{Expectation-Maximisation} (EM) approach (section \ref{sec:ebmEM}). For the DEM model we used two methods of aligning the obtained trajectories: (a) the standard method that aligns the trajectories using the average biomarker value of patients at baseline and (b) the optimised method described in section \ref{sec:demOptim}. 
+
+Each model has been tested on the staging consistency, time-lapse prediction on the DRC and ADNI datasets. On the DRC dataset, we also evaluated the models with respect to diagnosis prediction, while on ADNI we tested them on conversion prediction. We also tested a Support Vector Machine (SVM) on the differential diagnosis tasks using the same biomarker data. We performed 10-fold cross-validation on all experiments. 
+
+\section{Results}
+\label{sec:perfResults}
+
+\subsection{DRC}
+\label{sec:perfDRCresults}
+
+% staging - PCA cohort
+In table \ref{tab:drcStagingResPCA} we show the staging-based metrics for the PCA cohort. Each entry shows the mean and standard deviation of the metric calculated over the 10 folds. Similar results are shown for the AD cohort in table \ref{tab:drcStagingResAD}. In table \ref{tab:drcDiagRes} we show the results of differential diagnosis in the DRC cohort. In each entry we show the mean and standard deviation of the balanced accuracy across the cross-validation folds.
+
+% staging metrics - PCA
+\begin{table}[ht]
+\centering
+ \begin{tabular}{c | c | c | c | c}
+  Model & \multicolumn{2}{c |}{Staging Consistency} & \multicolumn{2}{c}{Time-lapse}\\
+  & Hard & Soft & Hard & Soft\\
+  
+  \hline
+  EBM - Standard & 0.88 $\pm$ 0.12 & 0.66 $\pm$ 0.09 & - & -\\ 
+  EBM - Simultaneous Sampling & 0.96 $\pm$ 0.06 & 0.70 $\pm$ 0.06  & - & -\\
+  EBM - EM & 0.95 $\pm$ 0.10 & 0.68 $\pm$ 0.11 & - & -\\
+  DEM - Standard Alignment & 0.94 $\pm$ 0.06 & 0.95 $\pm$ 0.05 & 0.54 $\pm$ 0.31 & 0.52 $\pm$ 0.29\\
+  DEM - Optimised Alignment & 0.95 $\pm$ 0.05 & 0.95 $\pm$ 0.04 & 0.56 $\pm$ 0.28 & 0.52 $\pm$ 0.27\\
+  
+ \end{tabular}
+ \caption{Staging metrics on the DRC data using the PCA cohort. The mean and standard deviations are calculated for each testing set in 10-fold cross-validation.}
+ \label{tab:drcStagingResPCA}
+\end{table}
+
+% staging metrics - AD
+\begin{table}[ht]
+\centering
+ \begin{tabular}{c | c | c | c | c}
+  Model & \multicolumn{2}{c |}{Staging Consistency} & \multicolumn{2}{c}{Time-lapse}\\
+  & Hard & Soft & Hard & Soft\\
+  
+  \hline
+  EBM - Standard & 0.91 $\pm$ 0.16 & 0.71 $\pm$ 0.07 & - & -\\
+  EBM - Simultaneous Sampling & 0.96 $\pm$ 0.07 & 0.76 $\pm$ 0.10 & - & -\\
+  EBM - EM & 0.99 $\pm$ 0.01 & 0.72 $\pm$ 0.07 & - & -\\
+  DEM - Standard Alignment & 0.87 $\pm$ 0.10 & 0.88 $\pm$ 0.08 & 0.72 $\pm$ 0.91 & 0.67 $\pm$ 0.92\\
+  DEM - Optimised Alignment & 0.87 $\pm$ 0.10 & 0.88 $\pm$ 0.08 & 0.74 $\pm$ 0.92 & 0.69 $\pm$ 0.92\\
+  
+ \end{tabular}
+ \caption{Staging metrics on the DRC data using the AD cohort. The mean and standard deviations are calculated for each testing set in 10-fold cross-validation.}
+ \label{tab:drcStagingResAD}
+\end{table}
+
+% diagnosis  
+\begin{table}[H]
+\centering
+ \begin{tabular}{c | c c c}
+  Model & PCA vs AD &  Controls vs PCA & Controls vs AD\\
+  
+  \hline
+  EBM - Standard & 0.72 $\pm$ 0.13 & 0.95 $\pm$ 0.05 & 0.90 $\pm$ 0.06\\
+  EBM - Simultaneous Sampling & 0.79 $\pm$ 0.09 & 0.94 $\pm$ 0.06 & 0.90 $\pm$ 0.05\\
+  EBM - EM & 0.80 $\pm$ 0.07 & 0.95 $\pm$ 0.05 & 0.87 $\pm$ 0.05\\
+  DEM - Standard Alignment & 0.81 $\pm$ 0.07 & 0.95 $\pm$ 0.05 & 0.90 $\pm$ 0.11\\
+  DEM - Optimised Alignment & 0.82 $\pm$ 0.09 & 0.93 $\pm$ 0.06 & 0.88 $\pm$ 0.14\\
+  Support Vector Machine & 0.79 $\pm$ 0.14 & 0.91 $\pm$ 0.06 & 0.88 $\pm$ 0.07\\
+  
+ \end{tabular}
+ \caption{Diagnosis prediction on DRC data. Each entry shows the mean and standard deviation of the balanced accuracy across the cross-validation folds. }
+ \label{tab:drcDiagRes}
+\end{table}
+
+\subsection{ADNI}
+\label{sec:perfADNIresults}
+
+In table \ref{tab:adniStagingRes} we show the staging-based performance results of the progression models on the ADNI dataset. As with the DRC results, for each metric we show its mean and standard deviation over the 10 cross-validation folds. In table \ref{tab:adniConvPredRes} we also evaluated the models on how well they predict conversion from MCI to AD at 12-months, 24-months and 36-months from baseline visit. We did not compute results for prediction of conversion status in controls due to small and very imbalanced datasets.
+
+% staging metrics
+\begin{table}[H]
+\centering
+ \begin{tabular}{c | c c | c c}
+  Model & \multicolumn{2}{c |}{Staging Consistency} & \multicolumn{2}{c}{Time-lapse}\\
+  & Hard & Soft & Hard & Soft\\
+  
+  \hline
+  EBM - Standard & 0.83 $\pm$ 0.07 & 0.76 $\pm$ 0.05 & - & -\\ 
+  EBM - Simultaneous Sampling & 0.84 $\pm$ 0.05 & 0.76 $\pm$ 0.06 & - & -\\
+  EBM - EM & 0.84 $\pm$ 0.08 & 0.74 $\pm$ 0.06 & - & -\\
+  DEM - Standard Alignment & 0.87 $\pm$ 0.05 & 0.83 $\pm$ 0.08 & 0.85 $\pm$ 0.17 & 0.85 $\pm$ 0.16\\
+  DEM - Optimised Alignment & 0.87 $\pm$ 0.05 & 0.84 $\pm$ 0.07 & 0.86 $\pm$ 0.15 & 0.86 $\pm$ 0.16\\
+
+  
+ \end{tabular}
+ \caption{Staging metrics on ADNI data}
+ \label{tab:adniStagingRes}
+\end{table}
+
+% prediction of conversion
+
+\begin{table}[H]
+\centering
+ \begin{tabularx}{0.75\textwidth}{c | Y Y Y}
+  Model & \multicolumn{3}{c}{Duration between baseline and follow-up}\\
+  
+  & 12 months & 24 months & 36 months\\
+  
+  \hline
+
+  EBM - Standard & 0.69 $\pm$ 0.14 & 0.64 $\pm$ 0.11 & 0.72 $\pm$ 0.15\\
+  EBM - Simultaneous Sampling & 0.66 $\pm$ 0.14 & 0.63 $\pm$ 0.10 & 0.74 $\pm$ 0.14\\
+  EBM - EM & 0.69 $\pm$ 0.15 & 0.63 $\pm$ 0.10 & 0.76 $\pm$ 0.15\\
+  DEM - Standard Alignment & 0.73 $\pm$ 0.13 & 0.72 $\pm$ 0.14 & 0.70 $\pm$ 0.13\\
+  DEM - Optimised Alignment & 0.64 $\pm$ 0.11 & 0.69 $\pm$ 0.12 & 0.75 $\pm$ 0.14\\
+  SVM & 0.68 $\pm$ 0.15 & 0.70 $\pm$ 0.10 & 0.77 $\pm$ 0.08\\
+  
+ \end{tabularx}
+ \caption{Prediction of conversion from MCI to AD on ADNI data. }
+ \label{tab:adniConvPredRes}
+\end{table}
+
+% TODO: add average time between visits in the staging tables
+% TODO: add number of subj in testing set in staging and diagnosis tables
+
+\section{Discussion}
+\label{sec:perfDiscussion}
+
+\subsection{DRC}
+\label{sec:perfDRCdiscussion}
+
+In the PCA cohort, most EBM models perform as good as the DEM models in terms of \emph{hard staging consistency} but relatively worse in \emph{soft staging consistency}. There is however some improvement in the novel EBM fitting methods compared to the standard EBM. Moreover, the DEM models perform very well in both hard and soft staging consistency, with a significantly better \emph{soft staging consistency} compared to the EBM models. We also tested the DEM models using the time-lapse metrics, and found that there is no significant difference between the optimised and standard alignment procedures for biomarker trajectories. We could not test the EBMs using the time-lapse metrics because there is no notion of time in the EBM, which is a discrete model. 
+
+% staging - AD cohort
+In the AD cohort we notice that the EBM models actually perform better than the DEM models in terms of \emph{hard staging consistency}, but worse in \emph{soft staging consistency}. These "contradictory" results could be explained by the fact that the soft staging consistency penalises uncertainty in the staging probabilities, and the EBM might have a lot of uncertainty due to not fitting the data well. The novel EBM methods again show some improvements compared to the Standard EBM method. In terms of the time-lapse, there is again no statistically significant difference between the two DEM methods.
+
+% diagnosis prediction
+In the diagnosis prediction tasks, most disease progression models have similar performance, with only the Standard EBM having a low performance in the PCA vs AD test. Surprisingly, for some tests such as the Controls vs PCA prediction, the disease progression models generally have similar or higher balanced accuracy than the SVM, which is a discriminative model optimised for this classification task.  
+
+\subsection{ADNI}
+\label{sec:perfADNIdiscussion}
+
+
+In terms of staging consistency the DEM models perform better than the EBM models, especially in terms of \emph{soft staging consistency}. As with the DRC results, this might be explained by the fact that the soft staging consistency penalises uncertainty in the subject staging. This uncertainty might be higher in the EBM due to a bad fit of the data, as the EBM assumes biomarker trajectories are step-functions. However, in the case of both the EBM and DEM, the staging performance of the novel and standard methods is very similar, suggesting that the standard methods already model the data well enough. Also in terms of time-lapse, the two DEM methods perform equally well.
+
+The results on conversion prediction in ADNI show that all models have a broadly similar performance at this task. However, a few clear differences can be noticed in some models. The DEM with standard trajectory alignment performs best at 12-months and 24-months conversion prediction, while the SVM and the novel fitting methods for EBMs and DEMs perform best at 36-month conversion prediction. This inconsistency might be due to some models having a better fit on certain parts of the disease time course.
+
+
+\subsection{Staging-based performance}
+
+The staging-based performance measures can pick up differences in the performance of the models in both DRC and ADNI datasets, in particular between different classes of models such as EBM vs DEM, where we see that DEM models usually perform better than EBM models. This might be the case because the DEM constructs continuous non-parametric biomarker trajectories which might give a better fit than the step-wise trajectories of the EBM. However, the disadvantage of non-parametric trajectories in the DEM is that they can overfit the data due to the large number of parameters that need to be estimated. 
+
+The staging consistency metrics can also pick up improvements in different fitting procedures, such as in the case of the EBM models. On the other hand, there are generally no statistically significant differences in the DEM between the standard versus optimised alignment, probably due to the fact that the standard alignment is already good enough for the two datasets that we tested it on.
+
+% hard vs soft staging consistency
+There are some differences between the \emph{hard} and \emph{soft staging consistencies}. Fundamentally, the soft staging consistency penalises for uncertainty in the subject staging while the \emph{hard} version does not. Nevertheless, in most of the experiments the \emph{hard} and \emph{soft staging consistency} metrics had consistent changes in values across different models. One exception was in the DRC data using the AD cohort, where the EBM methods had a higher score than DEM methods in terms of the \emph{hard staging consistency}, but lower score in terms of the \emph{soft staging consistency}. This can be explained by the fact that the hard staging consistency tends to favour models with a smaller set of possible stages such as the EBM due to floor and ceiling effects as well the fact that subject stages are forced to be snapped to the closest (discrete) stage. For example, a model with only one stage will always have 100\% accuracy in the \emph{staging consistency} metrics, due to all subjects being assigned the same stage. 
+
+\subsection{Diagnosis prediction performance}
+
+The models have also been tested on predicting the clinical diagnosis of subjects or predicting converter status across different time periods. We generally found these metrics to discriminate less between different types of models. For example, in many experiments there were no consistent differences between most models in terms of diagnosis performance, suggesting that the models were all equally good or that the diagnosis was itself noisy. Also, in terms of prediction of conversion in ADNI, there was a lot of variability in the metric values across folds and also in the model rankings across experiments, making it hard to identify an overall winner model. For example, the DEM with standard alignment performed very well at prediction of conversion status after 12-months and 24-months from baseline, but relatively worse at 36-months from baseline. This suggests this model had a better estimation of biomarker trajectories in earlier stages compared to later stages. The variability of the diagnosis prediction metrics can also be attributed to inaccuracies and biases in the diagnosis process.
+
+\section{Summary}
+
+In this work we presented several extensions of the EBM and the DEM. We further devised performance metrics that measure the accuracy of the predicted subject stages and of predicted clinical diagnosis. We tested these on two independent datasets: ADNI and DRC. Our results show that in many situations the novel EBM and DEM fitting methods show improvements with respect to our performance metrics compared to the standard versions. 
+
+\subsection{Limitations}
+
+% staging consistency is still a consistency metric, can easily get 100% if a model assigns the same stage to everyone
+The performance metrics we used for evaluation have certain inherent limitations which might limit their use for some disease progression models. For example, the staging consistency metrics are ultimately a consistency metric, which means that a specially crafted model can get perfect accuracy if it simply assigns the same stage to all subjects. If we knew the true underlying stage of each subject, we would be able to compare the predicted stages against these true stages without having to evaluate staging consistency. However, this is not the case with most datasets such as ADNI, where we only have a rough idea of where the subjects lie on the disease time-course based on their symptoms. However, the time-difference metric does not suffer from this problem, due to the fact that the model needs to predict precisely the time that passed between different visits to the clinic. 
+
+% staging consitency hard tends to favour the EBM, due to smaller # of states
+Another limitation of the \emph{hard staging consistency} metric is that is tends to favour models with a small number of states, in our case the EBM methods, because of floor and ceiling effects. For example, if a subject might ideally lie in between two discrete stages it is instead snapped to the nearest stage. For instance, if a follow-up visit comes shortly after the baseline visit, then they are both likely to be assigned the same stage even if the biomarkers might be sensitive enough to pick up the subtle changes. Depending on the chosen biomarkers, it might take several years in order to progress from one stage of the EBM to the next one. This is not the case with continuous time models such as the DEM, where the stage of subjects can be measured more precisely given enough accuracy in the biomarker measurements and that at least one biomarker is "active" (i.e. not plateaued) during each stage of the disease.
+
+% assume monotonically decreasing biomk: not the case for some diseases such as MS
+The staging consistency metrics are based on the idea that the biomarkers evolve monotonically as the disease progresses. This is however not the case with some neurological disorders such as Multiple Sclerosis (MC), where a patient can have an attack (relapse) followed by a period of steady recovery (remission). 
+
+% time difference is better but cannot be easily estimated for discreete models like EBM or Markov chains
+One limitation of the time difference metrics is that it requires the disease progression model to estimate the time from onset for every stage. This is not normally modelled in discrete models such as the event-based model or other methods based on Markov chains (e.g. \cite{sukkar2012disease}). However, it might be possible to extend these discrete models in order to estimate time since onset for each of the states.
+
+% diagnosis prediction is limited by the accuracy of the diagnosis, which is biased and inaccurate. 
+The main limitation of the performance metrics based on prediction of diagnosis or conversion status is that these labels are usually biased and inaccurate, especially if they are not confirmed post-mortem by histology. This is a problem especially in ADNI, where a large number of controls already have abnormal CSF biomarkers and will develop MCI status within a few years. 
+
+\section{Conclusion}
+\label{sec:perfConclusion}
+
+Given a lack of ground truth in the evolution of biomarker trajectories and accurate subject stages, these performance metrics will allow us to test and validate any types disease progression models, identify limitations in these models and find corresponding improvements. The performance of some models can vary depending on the dataset used, the way the data was pre-processed, cohort size or how well-defined diagnostic groups are. While we have so far demonstrated these performance metrics only on event-based models and differential equation models, they could be used to test any other disease progression models such as the self-modelling regression approach by \cite{donohue2014estimating} or the disease progression score method by \cite{jedynak2012computational}.
+
+Future work will focus on evaluating other types of disease progression models such as the ones previously mentioned or on devising other performance metrics. A different avenue of future research can focus on devising validation techniques for diseases such as MS where biomarkers do not monotonically decrease. 

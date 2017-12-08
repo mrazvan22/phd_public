@@ -1,0 +1,72 @@
+\chapter{Introduction}
+\label{chapter:intro}
+% AD: symptoms, diagnosis, causes, treatment
+
+\section{Alzheimer's Disease}
+
+Alzheimer's disease (AD) is a chronic progressive neurodegenerative disorder that accounts for 60\% to 70\% of all cases of dementia worldwide \cite{Burns2009,world2013dementia}. It's symptoms include cognitive dysfunction such as memory loss and language difficulties and psychiatric symptoms such as depression, hallucinations, delusions and agitation. People suffering from Alzheimer's disease also have difficulty performing daily tasks such as driving or shopping. The symptoms of Alzheimer's disease progress from mild symptoms such as memory loss to very severe dementia \cite{Burns2009}. Diagnosis is usually based on the person's medical history, information from relatives and behavioural observations. Medical imaging modalities such as computed tomography (CT) or magnetic resonance imaging (MRI) can be used to aid diagnosis and exclude other cerebral pathologies. 
+
+The causes of AD are currently unknown, although genetic and environmental risk factors have been found \cite{Burns2009}. Amyloid plaques and neurofibrillary tangles are the main histological features of Alzheimer's disease. Genetic risk factors include a specific isoform of alipoprotein (APOE4). So far there exists no effective treatment that stops or reverses neurodegeneration. 
+
+In 2010 it was estimated that up to 35 million people worldwide suffered from AD \cite{world2013dementia}. Bullock et al. \cite{bullock2004future} estimated that around 5\% of the population older than 65 years is affected by AD. The prevalence doubles approximately every 5 years beyond age 65 \cite{klafki2006therapeutic,cummings2004alzheimers} and some studies suggest that more than half of the population older than 85 years might be suffering from AD \cite{klafki2006therapeutic,forsyth1998overview}.
+
+% PCA
+\subsection{Posterior Cortical Atrophy}
+
+Posterior cortical atrophy (PCA), also called Benson's syndrome \cite{benson1988posterior} is a subtype of Alzheimer's disease that causes atrophy in the posterior part of the cortex, resulting in disruptions of the visual and motor systems. Early symptoms include blurred vision, inability to read, difficulty with depth perception and navigating through space \cite{crutch2012posterior,borruat2013posterior}. More severe symptoms emerge as neurodegeneration spreads, including inability to recognise familiar faces and objects and visual hallucinations. If the anterior part of the brain is also affected, symptoms similar to those from Alzheimer's disease may occur, such as memory loss.  As with typical Alzheimer's disease, the cause of PCA is still unknown and there is no fully accepted diagnostic criteria \cite{borruat2013posterior}.
+
+\section{Disease progression models}
+% 
+During the progression of Alzheimer's disease, many biomarkers based on Magnetic Resonance Imaging (MRI) such as cortical thickness become abnormal at different points in the progression. Finding out the precise temporal evolution of these biomarkers is crucial for patient staging in clinical trials. However, the analysis of disease progression is limited by several factors: short number of follow-up visits available, different disease onset and progression speed for every subject and heterogeneity in the cohort analysed. 
+
+% hypothetical models + models that require a priori clinical categories
+A hypothetical model of disease progression has been proposed by \cite{jack2010hypothetical}, describing the trajectory of key biomarkers along the progression of Alzheimer's disease. The model suggests that amyloid-beta and tau biomarkers become abnormal long before symptoms appear, followed by brain atrophy measures and cognitive decline. Motivated by this idea, several models such as \cite{bateman2012clinical} or \cite{schmidt2015multi} have been proposed that reconstruct biomarker trajectories and can be used to stage subjects. However, these models make use of \emph{a priori} clinical categories, which are noisy, biased and can limit the temporal resolution of the model. This motivates the use of fully data-driven approaches that do not use \emph{a priori} clinical stages. 
+
+% models that estimate trajectories of a small set of biomk
+A multitude of data-driven disease progression models (DPMs) have been proposed in recent years. On such model is the Event-Based Model \cite{fonteijn2012event}, which models the progression of disease as a sequence of discrete events, representing underlying biomarkers switching from a normal to abnormal state. Another model, the Differential Equation Model (DEM), reconstructs a continuous trajectory of biomarker measurements from change in short-term follow-up data, which represent samples of the slope at different points along the trajectory. Other models such as the Disease Progression Score (DPS) \cite{jedynak2012} or self-modelling regression approaches \cite{donohue2014estimating} have been developed, that build continuous trajectories by "stitching" together short-term follow-up data. Models estimating linear or logistic trajectories by means of Riemannian manifold techniques have also been recently shown \cite{schiratti2015mixed}.
+
+\section{Problem Statement}
+
+% aims of DPMs
+The data-driven disease progression models have several aims. First of all, they try to accurately reconstruct multimodal biomarker trajectories across the temporal domain. Secondly, they optimally place subject visits along this temporal axis and can even model progression speeds or higher order moments for every subject individually. Other things they might try to model include correlations between biomarker measurements or distinct trajectories for different subgroups in the population, which accounts for the disease heterogeneity. 
+
+% motivations of DPMs
+There are several reasons for using data-driven DPMs. First of all, they can provide a better understanding of the disease process by constructing a very detailed picture of the temporal dynamics of biomarkers. Compared to previous methods, they don't rely on a-priori staging (e.g. "mild", "moderate", "severe") of patients, which are usually crude, inaccurate and biased. Secondly, DPMs are valuable for clinical trials, where we need tools that can accurately stage subjects. Without accurate staging, drug trials might find no differences between the placebo group and the drug group. Third, these tools can be deployed in the clinic to provide personalised prognostic information to patients. 
+
+\section{Project goals}
+
+Our project has three main aims:
+\begin{enumerate}
+ % develop better models
+ \item Develop better disease progression models that can be used for accurate and robust modelling of the evolution of dementia and staging of subjects in clinical trials. Apart from improving existing models, we are also interested in developing novel methods that can uncover new insights into the disease process. 
+% study differences in AD subtypes: (tAD vs PCA)
+ \item Evaluate the performance of these models on real and synthetic datasets. This also includes finding new performance metrics that can be used to evaluate the models. 
+ \item Use these models for understanding the differences in the progression of two distinct AD subtypes: typical AD and Posterior Cortical Atrophy. This will help with differential diagnosis, clinical management of PCA patients and the design of research studies. For this analysis, we use a dataset from the Dementia Research Center (DRC), UK which contains Controls, PCA and tAD subjects. 
+\end{enumerate}
+
+\section{Contributions}
+
+The key contributions of our work are summarised below:
+\begin{enumerate}
+ \item Improved the fitting of the Event-Based Model by simultaneously estimating the abnormality sequence and event distribution parameters using two approaches: a blocked MCMC approach and an Expectation-Maximisation approach. This work contributes to aim 1 and is presented in section \ref{sec:ebmImprovements}. 
+ \item Improved the fitting of the Differential Equation Model by devising ways to align the biomarker trajectories along the temporal axis. This work contributes to aim 1 and is presented in section \ref{sec:demImprovements}. 
+ \item Evaluated the performance of two main classes of models: the Event-Based Model and the Differential Equation Model. We also proposed new metrics for evaluating the performance of these disease progression models. This work contributes towards aim 2 and is presented in chapter \ref{chapter:perf}. 
+ \item Developed a disease progression model that uses vertex-wise data such as cortical thickness as input. The model combines unsupervised learning and disease progression modelling to identify clusters of vertices on the cortical surface, with no spatial constraints, that show a similar trajectory of atrophy over a particular patient cohort. This contributes towards aim 1 and is presented in chapter \ref{chapter:voxelwise}.
+ \item Used the Event-Based Model, Differential Equation Model and the vertexwise approach from contribution 2 to compare the differences in the progression of two distinct AD subtypes: typical AD and PCA. These results contribute towards aim 3. The EBM results are presented in chapter \ref{chapter:ebm}, the differential equation results are presented in chapter \ref{chapter:diffeq} while the results with the vertexwise model are presented in chapter \ref{chapter:voxelwise}.
+\end{enumerate}
+
+\section{Report Structure}
+
+The report has the following structure:
+\begin{itemize}
+ \item Chapter \ref{chapter:background} contains background information on Alzheimer's disease, Posterior Cortical Atrophy and disease progression models. 
+ \item Chapter \ref{chapter:methods_project_data} contains information about the datasets analysed and the subject demographics. 
+ \item Chapter \ref{chapter:perf} presents the performance evaluation of the EBM and DEM, as well as the improved EBM fitting procedures.
+ \item Chapter \ref{chapter:ebm} presents results with the Event-Based Model on modelling the progression of PCA and tAD as well as PCA subgroups.
+ \item Chapter \ref{chapter:diffeq} presents a results but using the Differential Equation Model instead, which can give extra information such as rate and extent of atrophy.
+ \item Chapter \ref{chapter:voxelwise} presents the  temporal clustering model that used vertexwise thickness data.
+ \item Chapter \ref{chapter:plan} we propose the future work plan for the rest of the PhD period.
+ \end{itemize}
+
+
+
